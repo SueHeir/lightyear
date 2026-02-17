@@ -1,4 +1,5 @@
 use alloc::string::String;
+use bevy_ecs::entity::Entity;
 use bevy_reflect::Reflect;
 use core::any::TypeId;
 use lightyear_core::network::NetId;
@@ -29,6 +30,8 @@ pub enum ComponentError {
     DeltaCompressionError(String),
     #[error("component error: {0}")]
     SerializationError(#[from] SerializationError),
+    #[error("missing entity mapping for entity {entity:?}")]
+    MissingEntityMapping { entity: Entity },
 }
 
 /// [`ComponentKind`] is an internal wrapper around the type of the component

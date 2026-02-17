@@ -68,6 +68,30 @@ impl EntityMapper for SendEntityMap {
 #[derive(Default, Debug, Reflect, Deref, DerefMut)]
 pub struct ReceiveEntityMap(pub(crate) EntityHashMap<Entity>);
 
+impl ReceiveEntityMap {
+    // We use Entity::PLACEHOLDER as a sentinel key to track missing mappings without
+    // changing the public struct shape. This entity value should never appear as a
+    // valid remote entity.
+    const MISSING_KEY: Entity = Entity::PLACEHOLDER;
+
+    #[inline]
+    fn mark_missing(&mut self, entity: Entity) {
+        self.0.insert(Self::MISSING_KEY, entity);
+    }
+
+    /// Clears any previously recorded missing entity mapping.
+    #[inline]
+    pub fn clear_missing(&mut self) {
+        self.0.remove(&Self::MISSING_KEY);
+    }
+
+    /// Returns the last missing entity mapping, if any, and clears the marker.
+    #[inline]
+    pub fn take_missing(&mut self) -> Option<Entity> {
+        self.0.remove(&Self::MISSING_KEY)
+    }
+}
+
 impl EntityMapper for ReceiveEntityMap {
     /// Map an entity from the remote World to the local World
     fn get_mapped(&mut self, entity: Entity) -> Entity {
@@ -79,6 +103,7 @@ impl EntityMapper for ReceiveEntityMap {
             // if we don't find the entity, return Entity::PLACEHOLDER as an error
             self.0.get(&entity).copied().unwrap_or_else(|| {
                 debug!("Receive: Failed to map entity {entity:?}");
+                self.mark_missing(entity);
                 Entity::PLACEHOLDER
             })
         }

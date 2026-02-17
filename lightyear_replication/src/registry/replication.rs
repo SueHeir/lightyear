@@ -271,7 +271,13 @@ fn default_buffer<C: Component<Mutability = Mutable> + PartialEq>(
 ) -> Result<(), ComponentError> {
     let kind = ComponentKind::of::<C>();
     let component_id = entity_mut.component_id::<C>();
+    entity_map.clear_missing();
     let component = deserialize.deserialize(entity_map, reader)?;
+    if let Some(missing_entity) = entity_map.take_missing() {
+        return Err(ComponentError::MissingEntityMapping {
+            entity: missing_entity,
+        });
+    }
     let entity = entity_mut.entity.id();
     trace!(
         "Insert component {} to entity {entity:?}",
@@ -380,7 +386,13 @@ fn default_immutable_buffer<C: Component<Mutability = Immutable> + PartialEq>(
 ) -> Result<(), ComponentError> {
     let kind = ComponentKind::of::<C>();
     let component_id = entity_mut.component_id::<C>();
+    entity_map.clear_missing();
     let component = deserialize.deserialize(entity_map, reader)?;
+    if let Some(missing_entity) = entity_map.take_missing() {
+        return Err(ComponentError::MissingEntityMapping {
+            entity: missing_entity,
+        });
+    }
     let entity = entity_mut.entity.id();
     debug!(
         "Insert component {} to entity {entity:?}",

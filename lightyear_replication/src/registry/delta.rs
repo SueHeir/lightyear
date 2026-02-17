@@ -196,7 +196,13 @@ fn buffer_insert_delta<
     let component_id = entity_mut.component_id::<C>();
 
     let entity = entity_mut.entity.id();
+    entity_map.clear_missing();
     let delta = deserialize.deserialize(entity_map, reader)?;
+    if let Some(missing_entity) = entity_map.take_missing() {
+        return Err(ComponentError::MissingEntityMapping {
+            entity: missing_entity,
+        });
+    }
     trace!(
         ?tick,
         ?predicted,
